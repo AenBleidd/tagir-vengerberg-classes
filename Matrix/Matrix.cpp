@@ -45,3 +45,17 @@ Matrix & Matrix::operator += (const Matrix& arg) {
 Matrix & Matrix::operator + (const Matrix& arg) {
   return *this += arg;
 }
+Matrix & Matrix::operator -= (const Matrix& arg) {
+  if ((this->matrix.line != arg.matrix.line) ||
+     (this->matrix.column != arg.matrix.column)) {
+    this->error = true;
+    return *this;
+  }
+  int j = this->matrix.line*this->matrix.column;
+  for (int i = 0; i < j; i++)
+    this->matrix.matrix[i] -= arg.matrix.matrix[i];
+  return *this;
+}
+Matrix & Matrix::operator - (const Matrix& arg) {
+  return *this -= arg;
+}

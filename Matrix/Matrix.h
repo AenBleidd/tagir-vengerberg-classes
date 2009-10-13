@@ -18,5 +18,7 @@ class Matrix {
   Matrix & operator *= (const double number);
   Matrix & operator += (const Matrix& arg);
   Matrix & operator + (const Matrix& arg);
+  Matrix & operator -= (const Matrix& arg);
+  Matrix & operator - (const Matrix& arg);
 };
 #endif
