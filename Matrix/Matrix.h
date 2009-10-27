@@ -1,5 +1,7 @@
 #ifndef _MATRIX_H_
 #define _MATRIX_H_
+#include <iostream>
+using namespace std;
 struct MATRIX {
   unsigned int line; // count of lines
   unsigned int column; // count of columns
@@ -16,9 +18,11 @@ class Matrix {
   bool operator != (const Matrix& arg);
   Matrix & operator * (const double number);
   Matrix & operator *= (const double number);
-  Matrix & operator += (const Matrix& arg);
   Matrix & operator + (const Matrix& arg);
-  Matrix & operator -= (const Matrix& arg);
+  Matrix & operator += (const Matrix& arg);
   Matrix & operator - (const Matrix& arg);
+  Matrix & operator -= (const Matrix& arg);
+  Matrix & operator * (const Matrix& arg);
+  Matrix & operator *= (const Matrix& arg);
 };
 #endif
