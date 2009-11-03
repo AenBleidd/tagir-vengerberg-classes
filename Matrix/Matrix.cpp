@@ -1,4 +1,5 @@
 #include "Matrix.h"
+// Operators
 Matrix & Matrix::operator = (const Matrix& arg) {
   if (this == &arg) return *this;
 // return left matrix if there is some error
@@ -132,4 +133,20 @@ Matrix & Matrix::operator /= (const Matrix& arg) {
 }
 Matrix & Matrix::operator / (const Matrix& arg) {
   return *this /= arg;
+}
+// Functions
+Matrix* Matrix::Trans () {
+// return false if there is some error
+  if (error == true) return this;
+  Matrix *ret = new Matrix;
+  ret->error = false;
+  ret->matrix.line = matrix.column;
+  ret->matrix.column = matrix.line;
+  ret->matrix.matrix = new double [ret->matrix.line * ret->matrix.column];
+  for (int i = 0; i < ret->matrix.line; i++) {
+    for (int j = 0; j < ret->matrix.column; j++) {
+      ret->matrix.matrix[i*ret->matrix.column+j] = matrix.matrix[j*ret->matrix.line+i];
+    }
+  }
+  return ret;
 }
