@@ -10,6 +10,7 @@ class Matrix {
   MATRIX matrix; // matrix structure
   bool error;
 // functions
+  Matrix* Trans (void);
 // overloaded operators
   Matrix & operator = (const Matrix& arg);
   bool operator == (const Matrix& arg);
