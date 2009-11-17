@@ -1,6 +1,10 @@
 #include "Matrix.h"
 Matrix::Matrix() {
   error = false;
+  errorcode.operr = 0;
+  errorcode.ferr = 0;
+  errorcode.reserved0 = 0;
+  errorcode.reserved1= 0;
 }
 unsigned long int Matrix::GetLastError() {
   if (error == false) return 0;
@@ -25,7 +29,7 @@ Matrix & Matrix::operator = (const Matrix& arg) {
 }
 bool Matrix::operator == (const Matrix& arg) {
 // return false if there is some error
-  if (this->error == true || arg.error == true) return false;
+  if (this->error == true || arg.error == true) { errorcode.operr |= 2; return false; };
   if (this->matrix.line != arg.matrix.line &&
   this->matrix.column != arg.matrix.column)
     return false;
@@ -37,7 +41,7 @@ bool Matrix::operator == (const Matrix& arg) {
 }
 bool Matrix::operator != (const Matrix& arg) {
 // return false if there is some error
-  if (this->error == true || arg.error == true) return false;
+  if (this->error == true || arg.error == true) { errorcode.operr |= 2; return false; };
   return !(*this == arg);
 }
 Matrix & Matrix::operator * (const long double number) {
@@ -58,11 +62,12 @@ Matrix & Matrix::operator /= (const long double number) {
   return *this *= (1/number);
 }
 Matrix & Matrix::operator += (const Matrix& arg) {
-// return false if there is some error
+// return left matrix if there is some error
   if (this->error == true || arg.error == true) return *this;
   if ((this->matrix.line != arg.matrix.line) ||
      (this->matrix.column != arg.matrix.column)) {
     this->error = true;
+    this->errorcode.operr |= 16;
     return *this;
   }
   int j = this->matrix.line*this->matrix.column;
@@ -74,11 +79,12 @@ Matrix & Matrix::operator + (const Matrix& arg) {
   return *this += arg;
 }
 Matrix & Matrix::operator -= (const Matrix& arg) {
-// return false if there is some error
+// return left matrix if there is some error
   if (this->error == true || arg.error == true) return *this;
   if ((this->matrix.line != arg.matrix.line) ||
      (this->matrix.column != arg.matrix.column)) {
     this->error = true;
+    this->errorcode.operr |= 32;
     return *this;
   }
   int j = this->matrix.line*this->matrix.column;
@@ -90,11 +96,12 @@ Matrix & Matrix::operator - (const Matrix& arg) {
   return *this -= arg;
 }
 Matrix & Matrix::operator *= (const Matrix& arg) {
-// return false if there is some error
+// return left matrix if there is some error
   if (this->error == true || arg.error == true) return *this;
   if (this->matrix.column != arg.matrix.line) {
   this->error = true;
-   return *this;
+  this->errorcode.operr |= 64;
+  return *this;
   }
 // Create new matrix for result
   Matrix res;
@@ -117,11 +124,12 @@ Matrix & Matrix::operator * (const Matrix& arg) {
   return *this *= arg;
 }
 Matrix & Matrix::operator /= (const Matrix& arg) {
-// return false if there is some error
+// return left matrix if there is some error
   if (this->error == true || arg.error == true) return *this;
   if (this->matrix.column != arg.matrix.line) {
   this->error = true;
-   return *this;
+  this->errorcode.operr |= 128;
+  return *this;
   }
 // Create new matrix for result
   Matrix res;
@@ -145,7 +153,7 @@ Matrix & Matrix::operator / (const Matrix& arg) {
 }
 // Functions
 Matrix* Matrix::Trans () {
-// return false if there is some error
+// return left matrix if there is some error
   if (error == true) return this;
   Matrix *ret = new Matrix;
   ret->matrix.line = matrix.column;
@@ -157,9 +165,9 @@ Matrix* Matrix::Trans () {
   return ret;
 }
 Matrix* Matrix::Minor () {
-// return false if there is some error
+// return left matrix if there is some error
   if (error == true) return this;
-  if (matrix.line != matrix.column) { error = true; return this;};
+  if (matrix.line != matrix.column) { error = true; errorcode.ferr |= 2; return this;};
   Matrix *ret = new Matrix;
   ret->matrix.line = matrix.line;
   ret->matrix.column = matrix.column;
@@ -171,7 +179,7 @@ Matrix* Matrix::Minor () {
 }
 long double Matrix::MinorAux (unsigned int line, unsigned int column) {
 // return 0 if there is some error
-  if ((error == true) || (matrix.line != matrix.column)) { error = true; return 0; };
+  if ((error == true) || (matrix.line != matrix.column)) { error = true; errorcode.ferr |= 8; return 0; };
   if (matrix.line == 2) {
     for (unsigned char i = 0; i < 2; i++)
       for (unsigned char j = 0; j < 2; j++)
@@ -181,13 +189,13 @@ long double Matrix::MinorAux (unsigned int line, unsigned int column) {
   else {
     Matrix temp = *Minor(line,column);
     long double ret = temp.Det();
-    if (temp.error == true) { error = true; return 0; }
+    if (temp.error == true) { error = true; errorcode.ferr |= 8; return 0; }
     else return ret;
   }
 }
 Matrix* Matrix::Minor (unsigned int line, unsigned int column) {
   // return 0 if there is some error
-  if ((error == true) || (matrix.line != matrix.column)) { error = true; return this; };
+  if ((error == true) || (matrix.line != matrix.column)) { error = true; errorcode.ferr |= 4; return this; };
   Matrix *temp = new Matrix;
   temp->matrix.line = matrix.line - 1;
   temp->matrix.column = matrix.column - 1;
@@ -201,12 +209,12 @@ Matrix* Matrix::Minor (unsigned int line, unsigned int column) {
 }
 long double Matrix::Det () {
 // return 0 if there is some error
-  if ((error == true) || (matrix.line != matrix.column)) { error = true; return 0; };
+  if ((error == true) || (matrix.line != matrix.column)) { error = true; errorcode.ferr |= 16; return 0; };
   long double ret = 0;
   for (unsigned int j = 0; j < matrix.column; j++)
-    if (error == true) return 0;
+    if (error == true) { errorcode.ferr |= 16; return 0; }
     else
       ret += pow((-1),2+j)*matrix.matrix[j]*MinorAux(0,j);
-  if (error == true) return 0;
+  if (error == true) { errorcode.ferr |= 16; return 0; };
   return ret;
 }
