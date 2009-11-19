@@ -174,12 +174,15 @@ Matrix* Matrix::Minor () {
   ret->matrix.matrix = new long double [ret->matrix.line * ret->matrix.column];
   for (unsigned int n = 0; n < matrix.line; n++)
     for (unsigned int k = 0; k < matrix.column; k++)
-      ret->matrix.matrix[n*ret->matrix.column+k] = MinorAux(n,k);
+      if (error == true) return this;
+      else
+        ret->matrix.matrix[n*ret->matrix.column+k] = MinorAux(n,k);
   return ret;
 }
 long double Matrix::MinorAux (unsigned int line, unsigned int column) {
 // return 0 if there is some error
-  if ((error == true) || (matrix.line != matrix.column)) { error = true; errorcode.ferr |= 8; return 0; };
+  if (error == true) return 0;
+  if (matrix.line != matrix.column) { error = true; errorcode.ferr |= 8; return 0; };
   if (matrix.line == 2) {
     for (unsigned char i = 0; i < 2; i++)
       for (unsigned char j = 0; j < 2; j++)
@@ -189,13 +192,14 @@ long double Matrix::MinorAux (unsigned int line, unsigned int column) {
   else {
     Matrix temp = *Minor(line,column);
     long double ret = temp.Det();
-    if (temp.error == true) { error = true; errorcode.ferr |= 8; return 0; }
+    if (temp.error == true) { error = true; errorcode.ferr |= temp.errorcode.ferr; return 0; }
     else return ret;
   }
 }
 Matrix* Matrix::Minor (unsigned int line, unsigned int column) {
-  // return 0 if there is some error
-  if ((error == true) || (matrix.line != matrix.column)) { error = true; errorcode.ferr |= 4; return this; };
+// return left matrix if there is some error
+  if (error == true) return this;
+  if (matrix.line != matrix.column) { error = true; errorcode.ferr |= 4; return this; };
   Matrix *temp = new Matrix;
   temp->matrix.line = matrix.line - 1;
   temp->matrix.column = matrix.column - 1;
@@ -204,17 +208,50 @@ Matrix* Matrix::Minor (unsigned int line, unsigned int column) {
   for (unsigned int i = 0; i < matrix.line; i++)
     for (unsigned int j = 0; j < matrix.column; j++)
       if (i != line && i != column)
-         temp->matrix.matrix[n++];
+         temp->matrix.matrix[n++] = matrix.matrix[i*matrix.column+j];
   return temp;
 }
 long double Matrix::Det () {
 // return 0 if there is some error
-  if ((error == true) || (matrix.line != matrix.column)) { error = true; errorcode.ferr |= 16; return 0; };
+  if (error == true) return 0;
+  if (matrix.line != matrix.column) { error = true; errorcode.ferr |= 16; return 0; };
   long double ret = 0;
   for (unsigned int j = 0; j < matrix.column; j++)
-    if (error == true) { errorcode.ferr |= 16; return 0; }
+    if (error == true) return 0;
     else
       ret += pow((-1),2+j)*matrix.matrix[j]*MinorAux(0,j);
-  if (error == true) { errorcode.ferr |= 16; return 0; };
+  if (error == true) return 0;
+  return ret;
+}
+long double Matrix::Cofactor (unsigned int line, unsigned int column) {
+// return 0 if there is some error
+  if (error == true) return 0;
+  if (matrix.line != matrix.column) { error = true; errorcode.ferr |= 64; return 0; };
+  long double ret;
+  ret = pow((-1),line+column)*MinorAux(line,column);
+  if (error == true) return 0;
+  return ret;
+}
+Matrix* Matrix::Cofactor () {
+// return left matrix if there is some error
+  if (error == true) return this;
+  if (matrix.line != matrix.column) { error = true; errorcode.ferr |= 32; return this; };
+  Matrix *ret = new Matrix;
+  ret = Minor();
+  if (ret->error == true) { error = true; errorcode.ferr |= ret->errorcode.ferr; return this; };
+  for (unsigned int i = 0; i < matrix.line; i++)
+    for (unsigned int j = 0; j < matrix.column; j++)
+      ret->matrix.matrix[i*matrix.column+j] *= pow((-1), i+j);
+  return ret;
+}
+Matrix* Matrix::Adjugate () {
+// return left matrix if there is some error
+  if (error == true) return this;
+  if (matrix.line != matrix.column) { error = true; errorcode.ferr |= 128; return this; };
+  Matrix* ret = new Matrix;
+  ret = Cofactor();
+  if (ret->error == true) { error = true; errorcode.ferr |= ret->errorcode.ferr; return this; };
+  ret = ret->Trans();
+  if (ret->error == true) { error = true; errorcode.ferr |= ret->errorcode.ferr; return this; };
   return ret;
 }
