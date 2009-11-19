@@ -24,6 +24,9 @@ class Matrix {
   Matrix* Minor (unsigned int line, unsigned int column); // errorcode 4
   long double MinorAux (unsigned int line, unsigned int column); // errorcode 8
   long double Det(void); // errorcode 16
+  Matrix* Cofactor (void); // errorcode 32
+  long double Cofactor(unsigned int line, unsigned int column); // errorcode 64
+  Matrix* Adjugate (void); // reserved errorcode 128
 // overloaded operators
   Matrix & operator = (const Matrix& arg); // reserved errorcode 1
   bool operator == (const Matrix& arg); // errorcode 2
