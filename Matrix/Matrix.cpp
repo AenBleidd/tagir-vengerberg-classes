@@ -10,7 +10,7 @@ unsigned long int Matrix::GetLastError() {
   if (error == false) return 0;
   unsigned long int err = 0;
   err += errorcode.ferr;
-  err = err << 8;
+  err = err << 16;
   err += errorcode.operr;
   return err;
 }
@@ -29,7 +29,9 @@ Matrix & Matrix::operator = (const Matrix& arg) {
 }
 bool Matrix::operator == (const Matrix& arg) {
 // return false if there is some error
-  if (this->error == true || arg.error == true) { errorcode.operr |= 2; return false; };
+  if (this->error == true || arg.error == true) {
+    errorcode.operr |= 2; return false;
+  }
   if (this->matrix.line != arg.matrix.line &&
   this->matrix.column != arg.matrix.column)
     return false;
@@ -41,7 +43,9 @@ bool Matrix::operator == (const Matrix& arg) {
 }
 bool Matrix::operator != (const Matrix& arg) {
 // return false if there is some error
-  if (this->error == true || arg.error == true) { errorcode.operr |= 2; return false; };
+  if (this->error == true || arg.error == true) {
+    errorcode.operr |= 2; return false;
+  }
   return !(*this == arg);
 }
 Matrix & Matrix::operator * (const long double number) {
@@ -167,14 +171,16 @@ Matrix* Matrix::Trans () {
 Matrix* Matrix::Minor () {
 // return left matrix if there is some error
   if (error == true) return this;
-  if (matrix.line != matrix.column) { error = true; errorcode.ferr |= 2; return this;};
+  if (matrix.line != matrix.column) {
+    error = true; errorcode.ferr |= 2; return this;
+  }
   Matrix *ret = new Matrix;
   ret->matrix.line = matrix.line;
   ret->matrix.column = matrix.column;
   ret->matrix.matrix = new long double [ret->matrix.line * ret->matrix.column];
   for (unsigned int n = 0; n < matrix.line; n++)
     for (unsigned int k = 0; k < matrix.column; k++)
-      if (error == true) return this;
+      if (error == true) { delete ret; return this; }
       else
         ret->matrix.matrix[n*ret->matrix.column+k] = MinorAux(n,k);
   return ret;
@@ -182,7 +188,9 @@ Matrix* Matrix::Minor () {
 long double Matrix::MinorAux (unsigned int line, unsigned int column) {
 // return 0 if there is some error
   if (error == true) return 0;
-  if (matrix.line != matrix.column) { error = true; errorcode.ferr |= 8; return 0; };
+  if (matrix.line != matrix.column) {
+    error = true; errorcode.ferr |= 8; return 0;
+  }
   if (matrix.line == 2) {
     for (unsigned char i = 0; i < 2; i++)
       for (unsigned char j = 0; j < 2; j++)
@@ -192,29 +200,35 @@ long double Matrix::MinorAux (unsigned int line, unsigned int column) {
   else {
     Matrix temp = *Minor(line,column);
     long double ret = temp.Det();
-    if (temp.error == true) { error = true; errorcode.ferr |= temp.errorcode.ferr; return 0; }
+    if (temp.error == true) {
+      error = true; errorcode.ferr |= temp.errorcode.ferr; return 0;
+    }
     else return ret;
   }
 }
 Matrix* Matrix::Minor (unsigned int line, unsigned int column) {
 // return left matrix if there is some error
   if (error == true) return this;
-  if (matrix.line != matrix.column) { error = true; errorcode.ferr |= 4; return this; };
+  if (matrix.line != matrix.column) {
+    error = true; errorcode.ferr |= 4; return this;
+  }
   Matrix *temp = new Matrix;
   temp->matrix.line = matrix.line - 1;
   temp->matrix.column = matrix.column - 1;
-  temp->matrix.matrix = new long double [temp->matrix.line * temp->matrix.column];
+  temp->matrix.matrix = new long double [temp->matrix.line*temp->matrix.column];
   unsigned int n = 0;
   for (unsigned int i = 0; i < matrix.line; i++)
     for (unsigned int j = 0; j < matrix.column; j++)
-      if (i != line && i != column)
+      if (i != line && j != column)
          temp->matrix.matrix[n++] = matrix.matrix[i*matrix.column+j];
   return temp;
 }
 long double Matrix::Det () {
 // return 0 if there is some error
   if (error == true) return 0;
-  if (matrix.line != matrix.column) { error = true; errorcode.ferr |= 16; return 0; };
+  if (matrix.line != matrix.column) {
+    error = true; errorcode.ferr |= 16; return 0;
+  }
   long double ret = 0;
   for (unsigned int j = 0; j < matrix.column; j++)
     if (error == true) return 0;
@@ -226,7 +240,9 @@ long double Matrix::Det () {
 long double Matrix::Cofactor (unsigned int line, unsigned int column) {
 // return 0 if there is some error
   if (error == true) return 0;
-  if (matrix.line != matrix.column) { error = true; errorcode.ferr |= 64; return 0; };
+  if (matrix.line != matrix.column) {
+    error = true; errorcode.ferr |= 64; return 0;
+  }
   long double ret;
   ret = pow((-1),line+column)*MinorAux(line,column);
   if (error == true) return 0;
@@ -235,10 +251,15 @@ long double Matrix::Cofactor (unsigned int line, unsigned int column) {
 Matrix* Matrix::Cofactor () {
 // return left matrix if there is some error
   if (error == true) return this;
-  if (matrix.line != matrix.column) { error = true; errorcode.ferr |= 32; return this; };
+  if (matrix.line != matrix.column) {
+   error = true; errorcode.ferr |= 32; return this;
+  }
   Matrix *ret = new Matrix;
   ret = Minor();
-  if (ret->error == true) { error = true; errorcode.ferr |= ret->errorcode.ferr; return this; };
+  if (ret->error == true) {
+    error = true; errorcode.ferr |= ret->errorcode.ferr;
+    delete ret; return this;
+  }
   for (unsigned int i = 0; i < matrix.line; i++)
     for (unsigned int j = 0; j < matrix.column; j++)
       ret->matrix.matrix[i*matrix.column+j] *= pow((-1), i+j);
@@ -247,11 +268,82 @@ Matrix* Matrix::Cofactor () {
 Matrix* Matrix::Adjugate () {
 // return left matrix if there is some error
   if (error == true) return this;
-  if (matrix.line != matrix.column) { error = true; errorcode.ferr |= 128; return this; };
+  if (matrix.line != matrix.column) {
+    error = true; errorcode.ferr |= 128; return this;
+  }
   Matrix* ret = new Matrix;
   ret = Cofactor();
-  if (ret->error == true) { error = true; errorcode.ferr |= ret->errorcode.ferr; return this; };
+  if (ret->error == true) {
+    error = true; errorcode.ferr |= ret->errorcode.ferr;
+    delete ret ;return this;
+  }
   ret = ret->Trans();
-  if (ret->error == true) { error = true; errorcode.ferr |= ret->errorcode.ferr; return this; };
+  if (ret->error == true) {
+    error = true; errorcode.ferr |= ret->errorcode.ferr;
+    delete ret; return this;
+  }
   return ret;
+}
+Matrix* Matrix::Invert() {
+// return left matrix if there is some error
+  if (error == true) return this;
+  if (matrix.line != matrix.column) {
+    error = true; errorcode.ferr |= 256; return this;
+ };
+  long double det = Det();
+  if (error == true) return this;
+  if (det == 0) { error = true; errorcode.ferr |= 256; return this; };
+  Matrix* ret = new Matrix;
+  ret = Adjugate();
+  if (ret->error == true) {
+    error = true; errorcode.ferr |= ret->errorcode.ferr;
+    delete ret; return this;
+  }
+  *ret *= (1/det);
+  if (ret->error == true) {
+    error = true; errorcode.ferr |= ret->errorcode.ferr;
+    delete ret; return this;
+  }
+  return ret;
+}
+long double Matrix::Norm (unsigned char type) {
+  long double norm = 0;
+  long double *temp = 0;
+  if (type == 0) {
+    temp = new long double[matrix.line];
+    for (unsigned int i = 0; i < matrix.line; i++) {
+       temp[i] = 0;
+       for (unsigned int j = 0; j < matrix.column; j++) {
+         temp[i] += fabs(matrix.matrix[i*matrix.column+j]);
+       }
+    }
+    norm = temp[0];
+    for (unsigned int i = 1; i < matrix.line; i++)
+      if (temp[i] > norm) norm = temp[i];
+  delete[] temp;
+  return norm;
+  }
+  else if (type == 1) {
+    temp = new long double[matrix.column];
+    for (unsigned int i = 0; i < matrix.column; i++) {
+       temp[i] = 0;
+       for (unsigned int j = 0; j < matrix.line; j++) {
+         temp[i] += fabs(matrix.matrix[j*matrix.column+i]);
+       }
+    }
+    norm = temp[0];
+    for (unsigned int i = 1; i < matrix.column; i++)
+      if (temp[i] > norm) norm = temp[i];
+  delete[] temp;
+  return norm;
+  }
+  else if (type == 2) {
+    for (unsigned int i = 0; i < matrix.line*matrix.column; i++)  norm += pow(matrix.matrix[i],2);
+    norm = sqrt(norm);
+    return norm;
+  }
+  else {
+    errorcode.ferr |= 512;
+    return 0;
+  }
 }
