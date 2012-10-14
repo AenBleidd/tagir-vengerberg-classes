@@ -15,6 +15,8 @@ struct ERRORCODE {
 class Matrix {
  public:
   Matrix();
+  Matrix(int lines, int columns);
+  ~Matrix();
   MATRIX matrix; // matrix structure
   bool error;
 // functions
