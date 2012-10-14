@@ -5,6 +5,25 @@ Matrix::Matrix() {
   errorcode.ferr = 0;
   errorcode.reserved0 = 0;
   errorcode.reserved1= 0;
+  matrix.matrix = 0;
+}
+Matrix::Matrix(int lines, int columns) {
+  error = false;
+  errorcode.operr = 0;
+  errorcode.ferr = 0;
+  errorcode.reserved0 = 0;
+  errorcode.reserved1= 0;
+  matrix.line = lines;
+  matrix.column = columns;
+  matrix.matrix = new long double [lines * columns];
+}
+Matrix::~Matrix() {
+  if (matrix.matrix != 0) {
+	  delete [] matrix.matrix;
+	  matrix.matrix = 0;
+	  matrix.line = 0;
+	  matrix.column = 0;
+  }
 }
 unsigned long int Matrix::GetLastError() {
   if (error == false) return 0;
@@ -233,7 +252,7 @@ long double Matrix::Det () {
   for (unsigned int j = 0; j < matrix.column; j++)
     if (error == true) return 0;
     else
-      ret += pow((-1),2+j)*matrix.matrix[j]*MinorAux(0,j);
+      ret += pow((long double)(-1),(long double)(2+j))*matrix.matrix[j]*MinorAux(0,j);
   if (error == true) return 0;
   return ret;
 }
@@ -244,7 +263,7 @@ long double Matrix::Cofactor (unsigned int line, unsigned int column) {
     error = true; errorcode.ferr |= 64; return 0;
   }
   long double ret;
-  ret = pow((-1),line+column)*MinorAux(line,column);
+  ret = pow((long double)(-1),(long double)line+column)*MinorAux(line,column);
   if (error == true) return 0;
   return ret;
 }
@@ -262,7 +281,7 @@ Matrix* Matrix::Cofactor () {
   }
   for (unsigned int i = 0; i < matrix.line; i++)
     for (unsigned int j = 0; j < matrix.column; j++)
-      ret->matrix.matrix[i*matrix.column+j] *= pow((-1), i+j);
+      ret->matrix.matrix[i*matrix.column+j] *= pow((long double)(-1), (long double)i+j);
   return ret;
 }
 Matrix* Matrix::Adjugate () {
